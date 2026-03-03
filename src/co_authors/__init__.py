@@ -3,8 +3,6 @@ import subprocess
 import sys
 from os import environ
 
-import arguably
-
 from co_authors.agents import get_trailer
 from co_authors.prompt import select_agent
 
@@ -67,7 +65,6 @@ def _resolve_trailers(args: tuple[str, ...]) -> tuple[str, ...]:
     return None
 
 
-@arguably.command
 def commit(*args: str) -> None:
     """Run git commit, automatically adding Co-Authored-By trailers."""
     trailer = _resolve_trailers(args)

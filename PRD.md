@@ -81,10 +81,9 @@ When required, display a Rich-powered selection prompt listing all known agents 
 
 ## Technical Stack
 
-| Concern        | Library                                           |
-| -------------- | ------------------------------------------------- |
-| CLI interface  | [arguably](https://treykeown.github.io/arguably/) |
-| User prompts   | [rich](https://rich.readthedocs.io/)              |
-| Python version | ≥ 3.14 (as per `pyproject.toml`)                  |
-| Packaging      | `uv` / `uv_build`                                 |
-| Entry point    | `co-authors` (maps to `co_authors:main`)          |
+| Concern        | Library                                  |
+| -------------- | ---------------------------------------- |
+| User prompts   | [rich](https://rich.readthedocs.io/)     |
+| Python version | ≥ 3.14 (as per `pyproject.toml`)         |
+| Packaging      | `uv` / `uv_build`                        |
+| Entry point    | `co-authors` (maps to `co_authors:main`) |
