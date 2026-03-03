@@ -72,9 +72,11 @@ def commit(*args: str) -> None:
     """Run git commit, automatically adding Co-Authored-By trailers."""
     trailer = _resolve_trailers(args)
 
-    if trailer is None or _no_editor_needed(args):
-        # No trailer was added, or no editor will open — run git directly.
+    if trailer is None:
         return _exec_git("commit", *args)
+
+    if _no_editor_needed(args):
+        return _exec_git("commit", *args, *trailer)
 
     # A trailer was added and the editor will open.
     # Commit first so the editor shows a clean template, then amend to add
@@ -88,8 +90,12 @@ def commit(*args: str) -> None:
         return code
 
 
-def main(*args: str) -> None:
+def main(*args: str) -> int:
     argv = args or sys.argv[1:]
     if not argv or argv[0] != "commit":
         return _exec_git(*argv)
-    commit(*argv[1:])
+    return commit(*argv[1:]) or 0
+
+
+def cli() -> None:
+    sys.exit(main())

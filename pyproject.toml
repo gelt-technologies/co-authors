@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-co-authors = "co_authors:main"
+co-authors = "co_authors:cli"
 
 [build-system]
 requires = ["uv_build>=0.9.8,<0.10.0"]
