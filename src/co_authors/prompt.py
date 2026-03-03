@@ -16,10 +16,14 @@ def select_agent() -> str | None:
         console.print(f"  [cyan]{i}[/cyan]. [white]{escape(AGENTS[key])}[/white]")
     console.print("  [cyan]0[/cyan]. [white]None[/white]")
 
-    choice = Prompt.ask(
-        choices=["0", *[str(i) for i in range(1, len(agent_keys) + 1)]],
-        default="0",
-    )
+    try:
+        choice = Prompt.ask(
+            choices=["0", *[str(i) for i in range(1, len(agent_keys) + 1)]],
+            default="0",
+        )
+    except KeyboardInterrupt:
+        console.print("")
+        raise SystemExit(130)
 
     index = int(choice)
     if index == 0:
