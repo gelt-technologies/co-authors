@@ -1,0 +1,27 @@
+[project]
+name = "co-authors"
+version = "0.1.0"
+description = "A `git` wrapper to attribute coding agents via `Co-Authored-By`"
+readme = "README.md"
+authors = [
+    { name = "Alex Ward", email = "alex.ward@joingelt.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "arguably>=1.3.0",
+    "rich>=14.3.3",
+]
+
+[project.scripts]
+co-authors = "co_authors:main"
+
+[build-system]
+requires = ["uv_build>=0.9.8,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "ruff>=0.15.4",
+    "ty>=0.0.20",
+]
