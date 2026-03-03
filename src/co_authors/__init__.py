@@ -9,13 +9,13 @@ from co_authors.agents import get_trailer
 from co_authors.prompt import select_agent
 
 
-def _exec_git(*args: str) -> None:
+def _exec_git(*args: str) -> int:
     """Run the real git binary with the given arguments and propagate its exit code."""
     try:
         proc = subprocess.Popen(["git", *args])
     except FileNotFoundError:
         print("co-authors: git not found in PATH", file=sys.stderr)
-        sys.exit(1)
+        return 1
 
     def _forward(signum, frame):
         proc.send_signal(signum)
@@ -27,7 +27,7 @@ def _exec_git(*args: str) -> None:
     finally:
         signal.signal(signal.SIGINT, original_sigint)
         signal.signal(signal.SIGTERM, original_sigterm)
-    sys.exit(proc.returncode)
+    return proc.returncode
 
 
 def _trailer_present(args: tuple[str, ...], trailer: str) -> bool:
@@ -45,30 +45,51 @@ def _has_message_flag(args: tuple[str, ...]) -> bool:
     return "-m" in args or "--message" in args
 
 
+def _no_editor_needed(args: tuple[str, ...]) -> bool:
+    """Return True if git commit will not open an editor."""
+    return _has_message_flag(args) or "--no-edit" in args
+
+
 def _resolve_trailers(args: tuple[str, ...]) -> tuple[str, ...]:
     """Inject a Co-Authored-By trailer based on GIT_AGENT or interactive prompt."""
     agent_key = environ.get("GIT_AGENT", "")
+
     if agent_key:
         trailer = get_trailer(agent_key)
     elif not _has_message_flag(args):
         trailer = select_agent()
     else:
-        return args
+        return None
+
     if trailer and not _trailer_present(args, trailer):
-        args = (*args, "--trailer", trailer)
-    return args
+       return ("--trailer", trailer)
+
+    return None
 
 
 @arguably.command
 def commit(*args: str) -> None:
     """Run git commit, automatically adding Co-Authored-By trailers."""
-    args = _resolve_trailers(args)
-    _exec_git("commit", *args)
+    trailer = _resolve_trailers(args)
+
+    if trailer is None or _no_editor_needed(args):
+        # No trailer was added, or no editor will open — run git directly.
+        return _exec_git("commit", *args)
+
+    # A trailer was added and the editor will open.
+    # Commit first so the editor shows a clean template, then amend to add
+    # the trailer. This prevents the trailer from becoming the commit message
+    # if the editor exits without the user writing anything above it.
+    code = _exec_git("commit", *args, *trailer)
+
+    if code == 0:
+        return _exec_git("commit", "--amend", "--no-edit", *trailer)
+    else:
+        return code
 
 
-def main() -> None:
-    argv = sys.argv[1:]
+def main(*args: str) -> None:
+    argv = args or sys.argv[1:]
     if not argv or argv[0] != "commit":
-        _exec_git(*argv)
-        return
+        return _exec_git(*argv)
     commit(*argv[1:])

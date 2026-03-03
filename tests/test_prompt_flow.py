@@ -23,14 +23,13 @@ class TestResolveTrailersPromptFlow:
             lambda: "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>",
         )
         result = _resolve_trailers(())
-        assert "--trailer" in result
-        assert "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>" in result
+        assert result == ("--trailer", "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>")
 
     def test_no_git_agent_no_message_prompt_returns_none(self, monkeypatch):
         monkeypatch.delenv("GIT_AGENT", raising=False)
         monkeypatch.setattr("co_authors.select_agent", lambda: None)
         result = _resolve_trailers(())
-        assert "--trailer" not in result
+        assert result is None
 
     def test_no_git_agent_with_message_skips_prompt(self, monkeypatch):
         monkeypatch.delenv("GIT_AGENT", raising=False)
@@ -40,7 +39,7 @@ class TestResolveTrailersPromptFlow:
         )
         result = _resolve_trailers(("-m", "fix: something"))
         assert not called
-        assert result == ("-m", "fix: something")
+        assert result is None
 
     def test_git_agent_set_skips_prompt(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "claude")
@@ -50,7 +49,7 @@ class TestResolveTrailersPromptFlow:
         )
         result = _resolve_trailers(())
         assert not called
-        assert "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>" in result
+        assert result == ("--trailer", "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>")
 
     def test_prompt_trailer_not_duplicated(self, monkeypatch):
         monkeypatch.delenv("GIT_AGENT", raising=False)
@@ -58,4 +57,4 @@ class TestResolveTrailersPromptFlow:
         monkeypatch.setattr("co_authors.select_agent", lambda: trailer)
         args = ("--trailer", trailer)
         result = _resolve_trailers(args)
-        assert result.count(trailer) == 1
+        assert result is None

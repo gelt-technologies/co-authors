@@ -38,42 +38,41 @@ class TestTrailerPresent:
 
 
 class TestResolveTrailers:
-    def test_no_git_agent_returns_args_unchanged(self, monkeypatch):
+    def test_no_git_agent_returns_no_trailer(self, monkeypatch):
         monkeypatch.delenv("GIT_AGENT", raising=False)
         args = ("-m", "fix: something")
-        assert _resolve_trailers(args) == args
+        assert _resolve_trailers(args) is None
 
     def test_known_agent_injects_trailer(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "claude")
         result = _resolve_trailers(("-m", "fix: something"))
-        assert "--trailer" in result
-        assert "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>" in result
+        assert result == ("--trailer", "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>")
 
-    def test_unknown_agent_returns_args_unchanged(self, monkeypatch):
+    def test_unknown_agent_returns_no_trailer(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "unknown-agent")
         args = ("-m", "fix: something")
-        assert _resolve_trailers(args) == args
+        assert _resolve_trailers(args) is None
 
-    def test_no_duplicate_when_trailer_already_present(self, monkeypatch):
+    def test_no_trailer_when_trailer_already_present(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "claude")
         trailer = "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>"
         args = ("--trailer", trailer, "-m", "fix: something")
         result = _resolve_trailers(args)
-        assert result.count(trailer) == 1
+        assert result is None
 
     def test_no_duplicate_equals_form(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "claude")
         trailer = "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>"
         args = (f"--trailer={trailer}",)
         result = _resolve_trailers(args)
-        assert result == args
+        assert result is None
 
     def test_case_insensitive_agent_key(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "CLAUDE")
         result = _resolve_trailers(())
-        assert "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>" in result
+        assert result == ("--trailer", "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>")
 
     def test_cursor_agent(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "cursor")
         result = _resolve_trailers(())
-        assert "Co-Authored-By: Cursor <cursor[bot]@users.noreply.github.com>" in result
+        assert result == ("--trailer", "Co-Authored-By: Cursor <cursor[bot]@users.noreply.github.com>")

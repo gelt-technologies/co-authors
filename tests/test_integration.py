@@ -50,15 +50,22 @@ class TestCommitWithMessageAndAgent:
 
 
 class TestCommitNoMessageWithAgent:
-    def test_trailer_in_git_log(self, git_repo, git_env):
+    def test_trailer_in_git_log(self, git_repo, git_env, tmp_path):
+        # Use an editor script that writes a real commit message to the file,
+        # simulating a user typing a message before saving.
+        editor = tmp_path / "fake_editor.sh"
+        editor.write_text('#!/bin/sh\nprintf "feat: test commit\\n" > "$1"\n')
+        editor.chmod(0o755)
+
         _stage_new_file(git_repo, git_env)
         result = run_co_authors(
             git_repo,
             ["commit"],
-            env={**git_env, "GIT_AGENT": "cursor", "GIT_EDITOR": "true"},
+            env={**git_env, "GIT_AGENT": "cursor", "GIT_EDITOR": str(editor)},
         )
         assert result.returncode == 0, result.stderr
         log = _last_commit_message(git_repo, git_env)
+        assert "feat: test commit" in log
         assert "Co-Authored-By: Cursor <cursor[bot]@users.noreply.github.com>" in log
 
 

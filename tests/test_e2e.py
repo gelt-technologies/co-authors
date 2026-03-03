@@ -36,11 +36,7 @@ class TestCommitWithMessageAndAgent:
         main("commit", "-m", "fix: something")
         assert len(calls) == 1
         args = calls[0]
-        assert args[0] == "commit"
-        assert "-m" in args
-        assert "fix: something" in args
-        assert "--trailer" in args
-        assert "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>" in args
+        assert args == ("commit", "-m", "fix: something", "--trailer", "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>")
 
     def test_no_duplicate_trailer(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "claude")
@@ -80,8 +76,7 @@ class TestCommitNoMessageWithAgent:
         _run_main(monkeypatch, calls)
         main("commit", "--amend")
         args = calls[0]
-        assert "--trailer" in args
-        assert "Co-Authored-By: Cursor <cursor[bot]@users.noreply.github.com>" in args
+        assert args == ("commit", "--amend", "--trailer", "Co-Authored-By: Cursor <cursor[bot]@users.noreply.github.com>")
 
     def test_prompt_not_called(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "claude")
