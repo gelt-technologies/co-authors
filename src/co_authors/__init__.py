@@ -75,11 +75,8 @@ def commit(*args: str) -> None:
     if _no_editor_needed(args):
         return _exec_git("commit", *args, *trailer)
 
-    # A trailer was added and the editor will open.
     # Commit first so the editor shows a clean template, then amend to add
-    # the trailer. This prevents the trailer from becoming the commit message
-    # if the editor exits without the user writing anything above it.
-    code = _exec_git("commit", *args, *trailer)
+    code = _exec_git("commit", *args)
 
     if code == 0:
         return _exec_git("commit", "--amend", "--no-edit", *trailer)
