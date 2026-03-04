@@ -1,7 +1,7 @@
 <div align="center">
-    <h1>`co-authors`</h1>
-    <p align="center"><i>A `git` wrapper to attribute coding agents via `Co-Authored-By`</i></p>
-    <img width="382px" src=".github/assets/author-768.jpg">
+    <h1><code>co-authors</code></h1>
+    <p align="center"><i>A <code>git</code> wrapper to attribute coding agents via <code>Co-Authored-By</code></i></p>
+    <img width="382px" src=".github/assets/author-768.png">
 </div>
 
 ## Installation
