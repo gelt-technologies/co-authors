@@ -131,6 +131,45 @@ class TestCommitAmendWithAgent:
         assert "Co-Authored-By: Cursor <cursor[bot]@users.noreply.github.com>" in log
 
 
+class TestCommitWithMeFlag:
+    def test_me_flag_suppresses_trailer(self, git_repo, git_env):
+        _stage_new_file(git_repo, git_env)
+        result = run_co_authors(
+            git_repo,
+            ["commit", "-m", "feat: my own work", "--me"],
+            env={**git_env, "GIT_AGENT": "claude"},
+        )
+        assert result.returncode == 0, result.stderr
+        log = _last_commit_message(git_repo, git_env)
+        assert "Co-Authored-By:" not in log
+
+
+class TestCommitWithAgentFlag:
+    def test_agent_flag_injects_trailer_without_env(self, git_repo, git_env):
+        env = {k: v for k, v in git_env.items() if k != "GIT_AGENT"}
+        _stage_new_file(git_repo, env)
+        result = run_co_authors(
+            git_repo,
+            ["commit", "-m", "feat: agent flag test", "--agent=claude"],
+            env=env,
+        )
+        assert result.returncode == 0, result.stderr
+        log = _last_commit_message(git_repo, env)
+        assert "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>" in log
+
+    def test_agent_flag_overrides_env(self, git_repo, git_env):
+        _stage_new_file(git_repo, git_env)
+        result = run_co_authors(
+            git_repo,
+            ["commit", "-m", "feat: override test", "--agent=claude"],
+            env={**git_env, "GIT_AGENT": "cursor"},
+        )
+        assert result.returncode == 0, result.stderr
+        log = _last_commit_message(git_repo, git_env)
+        assert "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>" in log
+        assert "Co-Authored-By: Cursor" not in log
+
+
 class TestSigintForwarding:
     def test_sigint_exits_nonzero(self, git_repo, git_env):
         _stage_new_file(git_repo, git_env, filename="sigint_test.txt")
