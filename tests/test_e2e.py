@@ -81,6 +81,54 @@ class TestCommitNoMessageNoAgent:
         assert "--trailer" not in git_calls[0]
 
 
+class TestCommitWithMeFlag:
+    def test_me_flag_suppresses_trailer_when_agent_set(self, monkeypatch, git_calls):
+        monkeypatch.setenv("GIT_AGENT", "claude")
+        main("commit", "-m", "fix: something", "--me")
+        assert "--trailer" not in git_calls[0]
+
+    def test_me_flag_strips_flag_from_git_args(self, monkeypatch, git_calls):
+        monkeypatch.setenv("GIT_AGENT", "claude")
+        main("commit", "-m", "fix: something", "--me")
+        assert "--me" not in git_calls[0]
+
+    def test_me_flag_no_prompt_when_no_message(self, monkeypatch, git_calls):
+        monkeypatch.delenv("GIT_AGENT", raising=False)
+        prompt_called = []
+        monkeypatch.setattr("co_authors.select_agent", lambda: prompt_called.append(True) or None)
+        main("commit", "--me")
+        assert not prompt_called
+        assert "--trailer" not in git_calls[0]
+
+
+class TestCommitWithAgentFlag:
+    def test_agent_flag_overrides_env(self, monkeypatch, git_calls):
+        monkeypatch.setenv("GIT_AGENT", "cursor")
+        main("commit", "-m", "fix: something", "--agent=claude")
+        assert ("--trailer", "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>") == git_calls[0][-2:]
+
+    def test_agent_flag_works_without_env(self, monkeypatch, git_calls):
+        monkeypatch.delenv("GIT_AGENT", raising=False)
+        main("commit", "-m", "fix: something", "--agent", "claude")
+        assert ("--trailer", "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>") == git_calls[0][-2:]
+
+    def test_agent_flag_equals_form(self, monkeypatch, git_calls):
+        monkeypatch.delenv("GIT_AGENT", raising=False)
+        main("commit", "-m", "fix: something", "--agent=claude")
+        assert ("--trailer", "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>") == git_calls[0][-2:]
+
+    def test_agent_flag_strips_flag_from_git_args(self, monkeypatch, git_calls):
+        monkeypatch.delenv("GIT_AGENT", raising=False)
+        main("commit", "-m", "fix: something", "--agent=claude")
+        assert "--agent=claude" not in git_calls[0]
+        assert "--agent" not in git_calls[0]
+
+    def test_agent_flag_unknown_agent_no_trailer(self, monkeypatch, git_calls):
+        monkeypatch.delenv("GIT_AGENT", raising=False)
+        main("commit", "-m", "fix: something", "--agent=unknown")
+        assert "--trailer" not in git_calls[0]
+
+
 class TestNonCommitPassThrough:
     @pytest.mark.parametrize(
         "argv",

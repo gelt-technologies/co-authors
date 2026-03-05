@@ -48,9 +48,46 @@ def _no_editor_needed(args: tuple[str, ...]) -> bool:
     return _has_message_flag(args) or "--no-edit" in args
 
 
-def _resolve_trailers(args: tuple[str, ...]) -> tuple[str, ...]:
+def _parse_co_authors_flags(
+    args: tuple[str, ...],
+) -> tuple[tuple[str, ...], bool, str | None]:
+    """Strip --me and --agent flags from args.
+
+    Returns (cleaned_args, me, agent_override).
+    """
+    cleaned = []
+    me = False
+    agent_override = None
+
+    it = iter(args)
+
+    for arg in it:
+        match arg:
+            case "--me":
+                me = True
+            case "--agent":
+                if (next_val := next(it, None)) is None:
+                    print("co-authors: --agent requires a value", file=sys.stderr)
+                    sys.exit(1)
+                agent_override = next_val
+            case _ if arg.startswith("--agent="):
+                agent_override = arg.split("=", 1)[1]
+            case _:
+                cleaned.append(arg)
+    return tuple(cleaned), me, agent_override
+
+
+def _resolve_trailers(
+    args: tuple[str, ...],
+    *,
+    me: bool = False,
+    agent_override: str | None = None,
+) -> tuple[str, ...] | None:
     """Inject a Co-Authored-By trailer based on GIT_AGENT or interactive prompt."""
-    agent_key = environ.get("GIT_AGENT", "")
+    if me:
+        return None
+
+    agent_key = agent_override or environ.get("GIT_AGENT", "")
 
     if agent_key:
         trailer = get_trailer(agent_key)
@@ -67,7 +104,8 @@ def _resolve_trailers(args: tuple[str, ...]) -> tuple[str, ...]:
 
 def commit(*args: str) -> None:
     """Run git commit, automatically adding Co-Authored-By trailers."""
-    trailer = _resolve_trailers(args)
+    args, me, agent_override = _parse_co_authors_flags(args)
+    trailer = _resolve_trailers(args, me=me, agent_override=agent_override)
 
     if trailer is None:
         return _exec_git("commit", *args)

@@ -1,4 +1,6 @@
-from co_authors import _resolve_trailers, _trailer_present
+import pytest
+
+from co_authors import _parse_co_authors_flags, _resolve_trailers, _trailer_present
 
 
 class TestTrailerPresent:
@@ -76,3 +78,60 @@ class TestResolveTrailers:
         monkeypatch.setenv("GIT_AGENT", "cursor")
         result = _resolve_trailers(())
         assert result == ("--trailer", "Co-Authored-By: Cursor <cursor[bot]@users.noreply.github.com>")
+
+    def test_me_flag_suppresses_trailer(self, monkeypatch):
+        monkeypatch.setenv("GIT_AGENT", "claude")
+        assert _resolve_trailers((), me=True) is None
+
+    def test_agent_override_used_instead_of_env(self, monkeypatch):
+        monkeypatch.setenv("GIT_AGENT", "cursor")
+        result = _resolve_trailers(("-m", "fix"), agent_override="claude")
+        assert result == ("--trailer", "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>")
+
+    def test_agent_override_without_env(self, monkeypatch):
+        monkeypatch.delenv("GIT_AGENT", raising=False)
+        result = _resolve_trailers(("-m", "fix"), agent_override="claude")
+        assert result == ("--trailer", "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>")
+
+
+class TestParseCoAuthorsFlags:
+    def test_me_flag_sets_me_true(self):
+        args, me, agent_override = _parse_co_authors_flags(("--me", "-m", "fix"))
+        assert me is True
+        assert args == ("-m", "fix")
+        assert agent_override is None
+
+    def test_agent_flag_space_form(self):
+        args, me, agent_override = _parse_co_authors_flags(("--agent", "claude", "-m", "fix"))
+        assert agent_override == "claude"
+        assert args == ("-m", "fix")
+        assert me is False
+
+    def test_agent_flag_equals_form(self):
+        args, me, agent_override = _parse_co_authors_flags(("--agent=claude", "-m", "fix"))
+        assert agent_override == "claude"
+        assert args == ("-m", "fix")
+        assert me is False
+
+    def test_other_args_untouched(self):
+        args, me, agent_override = _parse_co_authors_flags(("-m", "fix: something", "--amend"))
+        assert args == ("-m", "fix: something", "--amend")
+        assert me is False
+        assert agent_override is None
+
+    def test_me_flag_alone(self):
+        args, me, agent_override = _parse_co_authors_flags(("--me",))
+        assert me is True
+        assert args == ()
+
+    def test_agent_flag_at_end_without_value_errors(self, capsys):
+        with pytest.raises(SystemExit) as exc_info:
+            _parse_co_authors_flags(("--agent",))
+        assert exc_info.value.code == 1
+        assert "co-authors: --agent requires a value" in capsys.readouterr().err
+
+    def test_empty_args(self):
+        args, me, agent_override = _parse_co_authors_flags(())
+        assert args == ()
+        assert me is False
+        assert agent_override is None

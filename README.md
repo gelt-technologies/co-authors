@@ -53,9 +53,28 @@ git commit
 # Displays a selection prompt: claude, copilot, cursor, gemini, or None
 ```
 
+### Inline agent flag
+
+Use `--agent` to specify the agent for a single commit without setting `GIT_AGENT`:
+
+```bash
+git commit -m "Add feature" --agent claude
+git commit -m "Add feature" --agent=claude
+```
+
+This also overrides `GIT_AGENT` if it is already set.
+
+### Bypassing attribution
+
+Use `--me` to skip trailer injection entirely — useful when `GIT_AGENT` is exported but a particular commit is your own work:
+
+```bash
+git commit -m "Fix typo" --me
+```
+
 ### Pass-through behaviour
 
-If `-m` is provided but `GIT_AGENT` is not set, the commit proceeds without any trailer — no prompt is shown.
+If `-m` is provided but `GIT_AGENT` is not set and `--agent` is not used, the commit proceeds without any trailer — no prompt is shown.
 
 All non-`commit` subcommands are passed through unchanged:
 
@@ -73,11 +92,13 @@ git push      # forwarded directly to git
 
 ## Behaviour Matrix
 
-| `-m` flag | `GIT_AGENT` set | Behaviour                                               |
-| --------- | --------------- | ------------------------------------------------------- |
-| yes       | yes             | Append trailer via `--trailer` (unless already present) |
-| yes       | no              | Pass through unchanged                                  |
-| no        | yes             | Append trailer via `--trailer`                          |
-| no        | no              | Interactive prompt to select an agent (or none)         |
+| `-m` flag | `GIT_AGENT` set | `--me` | `--agent` | Behaviour                                               |
+| --------- | --------------- | ------ | --------- | ------------------------------------------------------- |
+| yes       | yes             | no     | no        | Append trailer via `--trailer` (unless already present) |
+| yes       | no              | no     | no        | Pass through unchanged                                  |
+| no        | yes             | no     | no        | Append trailer via `--trailer`                          |
+| no        | no              | no     | no        | Interactive prompt to select an agent (or none)         |
+| any       | any             | yes    | no        | Pass through unchanged (no trailer)                     |
+| any       | any             | no     | set       | Append trailer for the given agent (overrides env)      |
 
 Trailers are never duplicated — if the same `Co-Authored-By` value is already present, it is not added again.
