@@ -72,16 +72,7 @@ def commit(*args: str) -> None:
     if trailer is None:
         return _exec_git("commit", *args)
 
-    if _no_editor_needed(args):
-        return _exec_git("commit", *args, *trailer)
-
-    # Commit first so the editor shows a clean template, then amend to add
-    code = _exec_git("commit", *args)
-
-    if code == 0:
-        return _exec_git("commit", "--amend", "--no-edit", "--no-verify", *trailer)
-    else:
-        return code
+    return _exec_git("commit", *args, *trailer)
 
 
 def main(*args: str) -> int:
