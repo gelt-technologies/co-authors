@@ -54,7 +54,7 @@ class TestCommitNoMessageWithAgent:
         # Use an editor script that writes a real commit message to the file,
         # simulating a user typing a message before saving.
         editor = tmp_path / "fake_editor.sh"
-        editor.write_text('#!/bin/sh\nprintf "feat: test commit\\n" > "$1"\n')
+        editor.write_text('#!/bin/sh\n{ printf "feat: test commit\\n\\n"; cat "$1"; } > "$1.tmp" && mv "$1.tmp" "$1"\n')
         editor.chmod(0o755)
 
         _stage_new_file(git_repo, git_env)
