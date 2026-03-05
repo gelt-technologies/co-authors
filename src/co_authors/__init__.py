@@ -58,19 +58,22 @@ def _parse_co_authors_flags(
     cleaned = []
     me = False
     agent_override = None
-    i = 0
-    while i < len(args):
-        arg = args[i]
-        if arg == "--me":
-            me = True
-        elif arg.startswith("--agent="):
-            agent_override = arg.split("=", 1)[1]
-        elif arg == "--agent" and i + 1 < len(args):
-            agent_override = args[i + 1]
-            i += 1
-        else:
-            cleaned.append(arg)
-        i += 1
+
+    it = iter(args)
+
+    for arg in it:
+        match arg:
+            case "--me":
+                me = True
+            case "--agent":
+                if (next_val := next(it, None)) is None:
+                    print("co-authors: --agent requires a value", file=sys.stderr)
+                    sys.exit(1)
+                agent_override = next_val
+            case _ if arg.startswith("--agent="):
+                agent_override = arg.split("=", 1)[1]
+            case _:
+                cleaned.append(arg)
     return tuple(cleaned), me, agent_override
 
 

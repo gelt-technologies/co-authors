@@ -1,3 +1,5 @@
+import pytest
+
 from co_authors import _parse_co_authors_flags, _resolve_trailers, _trailer_present
 
 
@@ -122,11 +124,11 @@ class TestParseCoAuthorsFlags:
         assert me is True
         assert args == ()
 
-    def test_agent_flag_at_end_without_value_passed_through(self):
-        # --agent with no following value is treated as an unknown arg and passed through
-        args, me, agent_override = _parse_co_authors_flags(("--agent",))
-        assert agent_override is None
-        assert "--agent" in args
+    def test_agent_flag_at_end_without_value_errors(self, capsys):
+        with pytest.raises(SystemExit) as exc_info:
+            _parse_co_authors_flags(("--agent",))
+        assert exc_info.value.code == 1
+        assert "co-authors: --agent requires a value" in capsys.readouterr().err
 
     def test_empty_args(self):
         args, me, agent_override = _parse_co_authors_flags(())
