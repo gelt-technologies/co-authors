@@ -7,7 +7,7 @@
 ## Installation
 
 ```bash
-uv tool install https://github.com/gelt-technologies/co-authors
+uv tool install git+https://github.com/gelt-technologies/co-authors
 ```
 
 ## Shell Alias Setup
