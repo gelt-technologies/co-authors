@@ -48,6 +48,17 @@ class TestCommitWithMessageAndAgent:
         log = _last_commit_message(git_repo, git_env)
         assert "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>" in log
 
+    def test_codex_trailer_in_git_log(self, git_repo, git_env):
+        _stage_new_file(git_repo, git_env, filename="codex-change.txt")
+        result = run_co_authors(
+            git_repo,
+            ["commit", "-m", "feat: codex attribution"],
+            env={**git_env, "GIT_AGENT": "codex"},
+        )
+        assert result.returncode == 0, result.stderr
+        log = _last_commit_message(git_repo, git_env)
+        assert "Co-Authored-By: Codex <codex[bot]@users.noreply.github.com>" in log
+
 
 class TestCommitNoMessageWithAgent:
     def test_trailer_in_git_log(self, git_repo, git_env, tmp_path):
@@ -168,6 +179,30 @@ class TestCommitWithAgentFlag:
         log = _last_commit_message(git_repo, git_env)
         assert "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>" in log
         assert "Co-Authored-By: Cursor" not in log
+
+    def test_agent_flag_codex_injects_trailer_without_env(self, git_repo, git_env):
+        env = {k: v for k, v in git_env.items() if k != "GIT_AGENT"}
+        _stage_new_file(git_repo, env, filename="codex-agent-flag.txt")
+        result = run_co_authors(
+            git_repo,
+            ["commit", "-m", "feat: codex agent flag", "--agent=codex"],
+            env=env,
+        )
+        assert result.returncode == 0, result.stderr
+        log = _last_commit_message(git_repo, env)
+        assert "Co-Authored-By: Codex <codex[bot]@users.noreply.github.com>" in log
+
+    def test_agent_flag_chatgpt_is_unknown(self, git_repo, git_env):
+        env = {k: v for k, v in git_env.items() if k != "GIT_AGENT"}
+        _stage_new_file(git_repo, env, filename="chatgpt-agent-flag.txt")
+        result = run_co_authors(
+            git_repo,
+            ["commit", "-m", "feat: unknown chatgpt key", "--agent=chatgpt"],
+            env=env,
+        )
+        assert result.returncode == 0, result.stderr
+        log = _last_commit_message(git_repo, env)
+        assert "Co-Authored-By:" not in log
 
 
 class TestSigintForwarding:

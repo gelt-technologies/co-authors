@@ -55,6 +55,11 @@ class TestResolveTrailers:
         args = ("-m", "fix: something")
         assert _resolve_trailers(args) is None
 
+    def test_chatgpt_agent_returns_no_trailer(self, monkeypatch):
+        monkeypatch.setenv("GIT_AGENT", "chatgpt")
+        args = ("-m", "fix: something")
+        assert _resolve_trailers(args) is None
+
     def test_no_trailer_when_trailer_already_present(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "claude")
         trailer = "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>"
@@ -78,6 +83,11 @@ class TestResolveTrailers:
         monkeypatch.setenv("GIT_AGENT", "cursor")
         result = _resolve_trailers(())
         assert result == ("--trailer", "Co-Authored-By: Cursor <cursor[bot]@users.noreply.github.com>")
+
+    def test_codex_agent(self, monkeypatch):
+        monkeypatch.setenv("GIT_AGENT", "codex")
+        result = _resolve_trailers(())
+        assert result == ("--trailer", "Co-Authored-By: Codex <codex[bot]@users.noreply.github.com>")
 
     def test_me_flag_suppresses_trailer(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "claude")

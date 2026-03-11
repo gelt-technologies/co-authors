@@ -1,5 +1,6 @@
 AGENTS: dict[str, str] = {
     "claude": "Claude <claude[bot]@users.noreply.github.com>",
+    "codex": "Codex <codex[bot]@users.noreply.github.com>",
     "cursor": "Cursor <cursor[bot]@users.noreply.github.com>",
 }
 

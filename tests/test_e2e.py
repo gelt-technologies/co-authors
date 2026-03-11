@@ -58,6 +58,11 @@ class TestCommitNoMessageWithAgent:
         main("commit", "--amend")
         assert git_calls[0] == ("commit", "--amend", "--trailer", "Co-Authored-By: Cursor <cursor[bot]@users.noreply.github.com>")
 
+    def test_codex_trailer_injected(self, monkeypatch, git_calls):
+        monkeypatch.setenv("GIT_AGENT", "codex")
+        main("commit", "--amend")
+        assert git_calls[0] == ("commit", "--amend", "--trailer", "Co-Authored-By: Codex <codex[bot]@users.noreply.github.com>")
+
     def test_prompt_not_called(self, monkeypatch, git_calls):
         monkeypatch.setenv("GIT_AGENT", "claude")
         prompt_called = []
@@ -126,6 +131,16 @@ class TestCommitWithAgentFlag:
     def test_agent_flag_unknown_agent_no_trailer(self, monkeypatch, git_calls):
         monkeypatch.delenv("GIT_AGENT", raising=False)
         main("commit", "-m", "fix: something", "--agent=unknown")
+        assert "--trailer" not in git_calls[0]
+
+    def test_agent_flag_codex_injects_trailer(self, monkeypatch, git_calls):
+        monkeypatch.delenv("GIT_AGENT", raising=False)
+        main("commit", "-m", "fix: something", "--agent=codex")
+        assert ("--trailer", "Co-Authored-By: Codex <codex[bot]@users.noreply.github.com>") == git_calls[0][-2:]
+
+    def test_agent_flag_chatgpt_no_trailer(self, monkeypatch, git_calls):
+        monkeypatch.delenv("GIT_AGENT", raising=False)
+        main("commit", "-m", "fix: something", "--agent=chatgpt")
         assert "--trailer" not in git_calls[0]
 
 
