@@ -97,7 +97,7 @@ def _resolve_trailers(
         return None
 
     if trailer and not _trailer_present(args, trailer):
-       return ("--trailer", trailer)
+        return ("--trailer", trailer)
 
     return None
 

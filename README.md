@@ -33,14 +33,14 @@ With this alias in place, all `git` commands pass through `co-authors` transpare
 Set `GIT_AGENT` to the agent key for automatic `Co-Authored-By` trailer injection:
 
 ```bash
-GIT_AGENT=codex git commit -m "Add feature"
-# Commits with: Co-Authored-By: Codex <codex[bot]@users.noreply.github.com>
+GIT_AGENT=claude git commit -m "Add feature"
+# Commits with: Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
-For persistent attribution in a session (e.g. inside a Codex session), export the variable:
+For persistent attribution in a session (e.g. inside a Claude Code session), export the variable:
 
 ```bash
-export GIT_AGENT=codex
+export GIT_AGENT=claude
 git commit -m "Add feature"
 ```
 
@@ -85,13 +85,12 @@ git push      # forwarded directly to git
 
 ## Supported Agents
 
-| Agent key | Co-Authored-By trailer                          |
-| --------- | ----------------------------------------------- |
-| `claude`  | `Claude <claude[bot]@users.noreply.github.com>` |
-| `codex`   | `Codex <codex[bot]@users.noreply.github.com>`   |
-| `cursor`  | `Cursor <cursor[bot]@users.noreply.github.com>` |
+| Agent key | Co-Authored-By trailer                  |
+| --------- | --------------------------------------- |
+| `claude`  | `Claude <noreply@anthropic.com>`        |
+| `codex`   | `Codex <codex@openai.com>`              |
+| `cursor`  | `Cursor <cursoragent@cursor.com>`       |
 
-`chatgpt[bot]` is not currently available on GitHub, so ChatGPT-specific avatar attribution is not supported yet.
 
 ## Behaviour Matrix
 

@@ -19,7 +19,11 @@ def _stage_new_file(repo_path, env, filename="change.txt", content="hello\n"):
     """Write a file and stage it so a commit can be made."""
     (repo_path / filename).write_text(content)
     subprocess.run(
-        ["git", "add", filename], cwd=repo_path, check=True, capture_output=True, env=env
+        ["git", "add", filename],
+        cwd=repo_path,
+        check=True,
+        capture_output=True,
+        env=env,
     )
 
 
@@ -46,7 +50,7 @@ class TestCommitWithMessageAndAgent:
         )
         assert result.returncode == 0, result.stderr
         log = _last_commit_message(git_repo, git_env)
-        assert "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>" in log
+        assert "Co-Authored-By: Claude <noreply@anthropic.com>" in log
 
     def test_codex_trailer_in_git_log(self, git_repo, git_env):
         _stage_new_file(git_repo, git_env, filename="codex-change.txt")
@@ -57,7 +61,7 @@ class TestCommitWithMessageAndAgent:
         )
         assert result.returncode == 0, result.stderr
         log = _last_commit_message(git_repo, git_env)
-        assert "Co-Authored-By: Codex <codex[bot]@users.noreply.github.com>" in log
+        assert "Co-Authored-By: Codex <codex@openai.com>" in log
 
 
 class TestCommitNoMessageWithAgent:
@@ -65,7 +69,9 @@ class TestCommitNoMessageWithAgent:
         # Use an editor script that writes a real commit message to the file,
         # simulating a user typing a message before saving.
         editor = tmp_path / "fake_editor.sh"
-        editor.write_text('#!/bin/sh\n{ printf "feat: test commit\\n\\n"; cat "$1"; } > "$1.tmp" && mv "$1.tmp" "$1"\n')
+        editor.write_text(
+            '#!/bin/sh\n{ printf "feat: test commit\\n\\n"; cat "$1"; } > "$1.tmp" && mv "$1.tmp" "$1"\n'
+        )
         editor.chmod(0o755)
 
         _stage_new_file(git_repo, git_env)
@@ -77,7 +83,7 @@ class TestCommitNoMessageWithAgent:
         assert result.returncode == 0, result.stderr
         log = _last_commit_message(git_repo, git_env)
         assert "feat: test commit" in log
-        assert "Co-Authored-By: Cursor <cursor[bot]@users.noreply.github.com>" in log
+        assert "Co-Authored-By: Cursor <cursoragent@cursor.com>" in log
 
 
 class TestCommitWithMessageNoAgent:
@@ -97,7 +103,7 @@ class TestCommitWithMessageNoAgent:
 class TestNoDuplicateTrailer:
     def test_trailer_appears_once(self, git_repo, git_env):
         _stage_new_file(git_repo, git_env)
-        trailer = "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>"
+        trailer = "Co-Authored-By: Claude <noreply@anthropic.com>"
         result = run_co_authors(
             git_repo,
             ["commit", "-m", "feat: add change", "--trailer", trailer],
@@ -139,7 +145,7 @@ class TestCommitAmendWithAgent:
         )
         assert result.returncode == 0, result.stderr
         log = _last_commit_message(git_repo, git_env)
-        assert "Co-Authored-By: Cursor <cursor[bot]@users.noreply.github.com>" in log
+        assert "Co-Authored-By: Cursor <cursoragent@cursor.com>" in log
 
 
 class TestCommitWithMeFlag:
@@ -166,7 +172,7 @@ class TestCommitWithAgentFlag:
         )
         assert result.returncode == 0, result.stderr
         log = _last_commit_message(git_repo, env)
-        assert "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>" in log
+        assert "Co-Authored-By: Claude <noreply@anthropic.com>" in log
 
     def test_agent_flag_overrides_env(self, git_repo, git_env):
         _stage_new_file(git_repo, git_env)
@@ -177,7 +183,7 @@ class TestCommitWithAgentFlag:
         )
         assert result.returncode == 0, result.stderr
         log = _last_commit_message(git_repo, git_env)
-        assert "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>" in log
+        assert "Co-Authored-By: Claude <noreply@anthropic.com>" in log
         assert "Co-Authored-By: Cursor" not in log
 
     def test_agent_flag_codex_injects_trailer_without_env(self, git_repo, git_env):
@@ -190,7 +196,7 @@ class TestCommitWithAgentFlag:
         )
         assert result.returncode == 0, result.stderr
         log = _last_commit_message(git_repo, env)
-        assert "Co-Authored-By: Codex <codex[bot]@users.noreply.github.com>" in log
+        assert "Co-Authored-By: Codex <codex@openai.com>" in log
 
     def test_agent_flag_chatgpt_is_unknown(self, git_repo, git_env):
         env = {k: v for k, v in git_env.items() if k != "GIT_AGENT"}
