@@ -1,6 +1,6 @@
 [project]
 name = "co-authors"
-version = "0.1.0"
+version = "0.2.0"
 description = "A `git` wrapper to attribute coding agents via `Co-Authored-By`"
 readme = "README.md"
 authors = [

@@ -85,12 +85,11 @@ git push      # forwarded directly to git
 
 ## Supported Agents
 
-| Agent key | Co-Authored-By trailer                  |
-| --------- | --------------------------------------- |
-| `claude`  | `Claude <noreply@anthropic.com>`        |
-| `codex`   | `Codex <codex@openai.com>`              |
-| `cursor`  | `Cursor <cursoragent@cursor.com>`       |
-
+| Agent key | Co-Authored-By trailer            |
+| --------- | --------------------------------- |
+| `claude`  | `Claude <noreply@anthropic.com>`  |
+| `codex`   | `Codex <codex@openai.com>`        |
+| `cursor`  | `Cursor <cursoragent@cursor.com>` |
 
 ## Behaviour Matrix
 
