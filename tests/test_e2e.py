@@ -28,11 +28,17 @@ class TestCommitWithMessageAndAgent:
     def test_trailer_is_injected(self, monkeypatch, git_calls):
         monkeypatch.setenv("GIT_AGENT", "claude")
         main("commit", "-m", "fix: something")
-        assert git_calls[0] == ("commit", "-m", "fix: something", "--trailer", "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>")
+        assert git_calls[0] == (
+            "commit",
+            "-m",
+            "fix: something",
+            "--trailer",
+            "Co-Authored-By: Claude <noreply@anthropic.com>",
+        )
 
     def test_no_duplicate_trailer(self, monkeypatch, git_calls):
         monkeypatch.setenv("GIT_AGENT", "claude")
-        trailer = "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>"
+        trailer = "Co-Authored-By: Claude <noreply@anthropic.com>"
         main("commit", "-m", "fix: something", "--trailer", trailer)
         assert git_calls[0].count(trailer) == 1
 
@@ -41,7 +47,9 @@ class TestCommitWithMessageNoAgent:
     def test_no_trailer_injected(self, monkeypatch, git_calls):
         monkeypatch.delenv("GIT_AGENT", raising=False)
         prompt_called = []
-        monkeypatch.setattr("co_authors.select_agent", lambda: prompt_called.append(True) or None)
+        monkeypatch.setattr(
+            "co_authors.select_agent", lambda: prompt_called.append(True) or None
+        )
         main("commit", "-m", "fix: something")
         assert not prompt_called
         assert git_calls[0] == ("commit", "-m", "fix: something")
@@ -56,12 +64,29 @@ class TestCommitNoMessageWithAgent:
     def test_trailer_injected(self, monkeypatch, git_calls):
         monkeypatch.setenv("GIT_AGENT", "cursor")
         main("commit", "--amend")
-        assert git_calls[0] == ("commit", "--amend", "--trailer", "Co-Authored-By: Cursor <cursor[bot]@users.noreply.github.com>")
+        assert git_calls[0] == (
+            "commit",
+            "--amend",
+            "--trailer",
+            "Co-Authored-By: Cursor <cursoragent@cursor.com>",
+        )
+
+    def test_codex_trailer_injected(self, monkeypatch, git_calls):
+        monkeypatch.setenv("GIT_AGENT", "codex")
+        main("commit", "--amend")
+        assert git_calls[0] == (
+            "commit",
+            "--amend",
+            "--trailer",
+            "Co-Authored-By: Codex <codex@openai.com>",
+        )
 
     def test_prompt_not_called(self, monkeypatch, git_calls):
         monkeypatch.setenv("GIT_AGENT", "claude")
         prompt_called = []
-        monkeypatch.setattr("co_authors.select_agent", lambda: prompt_called.append(True) or None)
+        monkeypatch.setattr(
+            "co_authors.select_agent", lambda: prompt_called.append(True) or None
+        )
         main("commit", "--amend")
         assert not prompt_called
 
@@ -69,10 +94,13 @@ class TestCommitNoMessageWithAgent:
 class TestCommitNoMessageNoAgent:
     def test_prompt_called_and_trailer_injected(self, monkeypatch, git_calls):
         monkeypatch.delenv("GIT_AGENT", raising=False)
-        monkeypatch.setattr("co_authors.select_agent", lambda: "Co-Authored-By: Cursor <cursor[bot]@users.noreply.github.com>")
+        monkeypatch.setattr(
+            "co_authors.select_agent",
+            lambda: "Co-Authored-By: Cursor <cursoragent@cursor.com>",
+        )
         main("commit")
         assert "--trailer" in git_calls[0]
-        assert "Co-Authored-By: Cursor <cursor[bot]@users.noreply.github.com>" in git_calls[0]
+        assert "Co-Authored-By: Cursor <cursoragent@cursor.com>" in git_calls[0]
 
     def test_prompt_none_selection_no_trailer(self, monkeypatch, git_calls):
         monkeypatch.delenv("GIT_AGENT", raising=False)
@@ -95,7 +123,9 @@ class TestCommitWithMeFlag:
     def test_me_flag_no_prompt_when_no_message(self, monkeypatch, git_calls):
         monkeypatch.delenv("GIT_AGENT", raising=False)
         prompt_called = []
-        monkeypatch.setattr("co_authors.select_agent", lambda: prompt_called.append(True) or None)
+        monkeypatch.setattr(
+            "co_authors.select_agent", lambda: prompt_called.append(True) or None
+        )
         main("commit", "--me")
         assert not prompt_called
         assert "--trailer" not in git_calls[0]
@@ -105,17 +135,26 @@ class TestCommitWithAgentFlag:
     def test_agent_flag_overrides_env(self, monkeypatch, git_calls):
         monkeypatch.setenv("GIT_AGENT", "cursor")
         main("commit", "-m", "fix: something", "--agent=claude")
-        assert ("--trailer", "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>") == git_calls[0][-2:]
+        assert (
+            "--trailer",
+            "Co-Authored-By: Claude <noreply@anthropic.com>",
+        ) == git_calls[0][-2:]
 
     def test_agent_flag_works_without_env(self, monkeypatch, git_calls):
         monkeypatch.delenv("GIT_AGENT", raising=False)
         main("commit", "-m", "fix: something", "--agent", "claude")
-        assert ("--trailer", "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>") == git_calls[0][-2:]
+        assert (
+            "--trailer",
+            "Co-Authored-By: Claude <noreply@anthropic.com>",
+        ) == git_calls[0][-2:]
 
     def test_agent_flag_equals_form(self, monkeypatch, git_calls):
         monkeypatch.delenv("GIT_AGENT", raising=False)
         main("commit", "-m", "fix: something", "--agent=claude")
-        assert ("--trailer", "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>") == git_calls[0][-2:]
+        assert (
+            "--trailer",
+            "Co-Authored-By: Claude <noreply@anthropic.com>",
+        ) == git_calls[0][-2:]
 
     def test_agent_flag_strips_flag_from_git_args(self, monkeypatch, git_calls):
         monkeypatch.delenv("GIT_AGENT", raising=False)
@@ -126,6 +165,18 @@ class TestCommitWithAgentFlag:
     def test_agent_flag_unknown_agent_no_trailer(self, monkeypatch, git_calls):
         monkeypatch.delenv("GIT_AGENT", raising=False)
         main("commit", "-m", "fix: something", "--agent=unknown")
+        assert "--trailer" not in git_calls[0]
+
+    def test_agent_flag_codex_injects_trailer(self, monkeypatch, git_calls):
+        monkeypatch.delenv("GIT_AGENT", raising=False)
+        main("commit", "-m", "fix: something", "--agent=codex")
+        assert ("--trailer", "Co-Authored-By: Codex <codex@openai.com>") == git_calls[
+            0
+        ][-2:]
+
+    def test_agent_flag_chatgpt_no_trailer(self, monkeypatch, git_calls):
+        monkeypatch.delenv("GIT_AGENT", raising=False)
+        main("commit", "-m", "fix: something", "--agent=chatgpt")
         assert "--trailer" not in git_calls[0]
 
 

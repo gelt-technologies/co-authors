@@ -34,7 +34,7 @@ Set `GIT_AGENT` to the agent key for automatic `Co-Authored-By` trailer injectio
 
 ```bash
 GIT_AGENT=claude git commit -m "Add feature"
-# Commits with: Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>
+# Commits with: Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 For persistent attribution in a session (e.g. inside a Claude Code session), export the variable:
@@ -50,7 +50,7 @@ When `GIT_AGENT` is not set and no `-m` message is provided, `co-authors` prompt
 
 ```bash
 git commit
-# Displays a selection prompt: claude, copilot, cursor, gemini, or None
+# Displays a selection prompt: claude, codex, cursor, or None
 ```
 
 ### Inline agent flag
@@ -85,10 +85,12 @@ git push      # forwarded directly to git
 
 ## Supported Agents
 
-| Agent key | Co-Authored-By trailer                          |
-| --------- | ----------------------------------------------- |
-| `claude`  | `Claude <claude[bot]@users.noreply.github.com>` |
-| `cursor`  | `Cursor <cursor[bot]@users.noreply.github.com>` |
+| Agent key | Co-Authored-By trailer                  |
+| --------- | --------------------------------------- |
+| `claude`  | `Claude <noreply@anthropic.com>`        |
+| `codex`   | `Codex <codex@openai.com>`              |
+| `cursor`  | `Cursor <cursoragent@cursor.com>`       |
+
 
 ## Behaviour Matrix
 

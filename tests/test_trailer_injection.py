@@ -6,36 +6,36 @@ from co_authors import _parse_co_authors_flags, _resolve_trailers, _trailer_pres
 class TestTrailerPresent:
     def test_not_present_empty_args(self):
         assert not _trailer_present(
-            (), "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>"
+            (), "Co-Authored-By: Claude <noreply@anthropic.com>"
         )
 
     def test_not_present_unrelated_args(self):
         args = ("-m", "fix: something")
         assert not _trailer_present(
-            args, "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>"
+            args, "Co-Authored-By: Claude <noreply@anthropic.com>"
         )
 
     def test_present_as_separate_arg(self):
-        trailer = "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>"
+        trailer = "Co-Authored-By: Claude <noreply@anthropic.com>"
         args = ("--trailer", trailer, "-m", "fix: something")
         assert _trailer_present(args, trailer)
 
     def test_present_as_equals_form(self):
-        trailer = "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>"
+        trailer = "Co-Authored-By: Claude <noreply@anthropic.com>"
         args = (f"--trailer={trailer}",)
         assert _trailer_present(args, trailer)
 
     def test_different_trailer_not_matched(self):
-        args = ("--trailer", "Co-Authored-By: Cursor <cursor[bot]@users.noreply.github.com>")
+        args = ("--trailer", "Co-Authored-By: Cursor <cursoragent@cursor.com>")
         assert not _trailer_present(
-            args, "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>"
+            args, "Co-Authored-By: Claude <noreply@anthropic.com>"
         )
 
     def test_trailer_flag_at_end_without_value(self):
         # --trailer at the very end with no following value should not crash
         args = ("--trailer",)
         assert not _trailer_present(
-            args, "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>"
+            args, "Co-Authored-By: Claude <noreply@anthropic.com>"
         )
 
 
@@ -48,23 +48,28 @@ class TestResolveTrailers:
     def test_known_agent_injects_trailer(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "claude")
         result = _resolve_trailers(("-m", "fix: something"))
-        assert result == ("--trailer", "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>")
+        assert result == ("--trailer", "Co-Authored-By: Claude <noreply@anthropic.com>")
 
     def test_unknown_agent_returns_no_trailer(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "unknown-agent")
         args = ("-m", "fix: something")
         assert _resolve_trailers(args) is None
 
+    def test_chatgpt_agent_returns_no_trailer(self, monkeypatch):
+        monkeypatch.setenv("GIT_AGENT", "chatgpt")
+        args = ("-m", "fix: something")
+        assert _resolve_trailers(args) is None
+
     def test_no_trailer_when_trailer_already_present(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "claude")
-        trailer = "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>"
+        trailer = "Co-Authored-By: Claude <noreply@anthropic.com>"
         args = ("--trailer", trailer, "-m", "fix: something")
         result = _resolve_trailers(args)
         assert result is None
 
     def test_no_duplicate_equals_form(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "claude")
-        trailer = "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>"
+        trailer = "Co-Authored-By: Claude <noreply@anthropic.com>"
         args = (f"--trailer={trailer}",)
         result = _resolve_trailers(args)
         assert result is None
@@ -72,12 +77,20 @@ class TestResolveTrailers:
     def test_case_insensitive_agent_key(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "CLAUDE")
         result = _resolve_trailers(())
-        assert result == ("--trailer", "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>")
+        assert result == ("--trailer", "Co-Authored-By: Claude <noreply@anthropic.com>")
 
     def test_cursor_agent(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "cursor")
         result = _resolve_trailers(())
-        assert result == ("--trailer", "Co-Authored-By: Cursor <cursor[bot]@users.noreply.github.com>")
+        assert result == (
+            "--trailer",
+            "Co-Authored-By: Cursor <cursoragent@cursor.com>",
+        )
+
+    def test_codex_agent(self, monkeypatch):
+        monkeypatch.setenv("GIT_AGENT", "codex")
+        result = _resolve_trailers(())
+        assert result == ("--trailer", "Co-Authored-By: Codex <codex@openai.com>")
 
     def test_me_flag_suppresses_trailer(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "claude")
@@ -86,12 +99,12 @@ class TestResolveTrailers:
     def test_agent_override_used_instead_of_env(self, monkeypatch):
         monkeypatch.setenv("GIT_AGENT", "cursor")
         result = _resolve_trailers(("-m", "fix"), agent_override="claude")
-        assert result == ("--trailer", "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>")
+        assert result == ("--trailer", "Co-Authored-By: Claude <noreply@anthropic.com>")
 
     def test_agent_override_without_env(self, monkeypatch):
         monkeypatch.delenv("GIT_AGENT", raising=False)
         result = _resolve_trailers(("-m", "fix"), agent_override="claude")
-        assert result == ("--trailer", "Co-Authored-By: Claude <claude[bot]@users.noreply.github.com>")
+        assert result == ("--trailer", "Co-Authored-By: Claude <noreply@anthropic.com>")
 
 
 class TestParseCoAuthorsFlags:
@@ -102,19 +115,25 @@ class TestParseCoAuthorsFlags:
         assert agent_override is None
 
     def test_agent_flag_space_form(self):
-        args, me, agent_override = _parse_co_authors_flags(("--agent", "claude", "-m", "fix"))
+        args, me, agent_override = _parse_co_authors_flags(
+            ("--agent", "claude", "-m", "fix")
+        )
         assert agent_override == "claude"
         assert args == ("-m", "fix")
         assert me is False
 
     def test_agent_flag_equals_form(self):
-        args, me, agent_override = _parse_co_authors_flags(("--agent=claude", "-m", "fix"))
+        args, me, agent_override = _parse_co_authors_flags(
+            ("--agent=claude", "-m", "fix")
+        )
         assert agent_override == "claude"
         assert args == ("-m", "fix")
         assert me is False
 
     def test_other_args_untouched(self):
-        args, me, agent_override = _parse_co_authors_flags(("-m", "fix: something", "--amend"))
+        args, me, agent_override = _parse_co_authors_flags(
+            ("-m", "fix: something", "--amend")
+        )
         assert args == ("-m", "fix: something", "--amend")
         assert me is False
         assert agent_override is None
